@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+# Torch is installed in Dockerfile to ensure CPU version
+transformers
+accelerate
+# Phi-3 needs this
+sentencepiece
+protobuf

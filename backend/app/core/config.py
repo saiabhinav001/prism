@@ -1,0 +1,37 @@
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "PRISM API"
+    API_V1_STR: str = "/api/v1"
+    
+    # Database
+    POSTGRES_USER: str = "prism_user"
+    POSTGRES_PASSWORD: str = "prism_password"
+    POSTGRES_SERVER: str = "db"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "prism_db"
+    DATABASE_URL: Optional[str] = None
+    
+    SECRET_KEY: str = "supersecretkey" # In prod, read from env
+    
+    # GitHub OAuth
+    GITHUB_CLIENT_ID: str = "Client_ID_Placeholder"
+    GITHUB_CLIENT_SECRET: str = "Client_Secret_Placeholder"
+    GITHUB_REDIRECT_URI: str = "http://localhost:3000/auth/callback"
+    
+    # AI
+    # AI
+    # GEMINI_API_KEY removed
+    HF_LLM_URL: str = "https://huggingface.co/spaces/YOUR_USERNAME/prism-llm-service" # User to update this
+
+
+    def model_post_init(self, __context):
+        if self.DATABASE_URL is None:
+            self.DATABASE_URL = f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
+    class Config:
+        case_sensitive = True
+        env_file = "../.env"
+
+settings = Settings()
