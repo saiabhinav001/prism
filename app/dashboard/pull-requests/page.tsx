@@ -21,7 +21,12 @@ import {
     AlertCircle,
     CheckCircle2,
     FileCode2,
-    Code2
+    Code2,
+    RefreshCw,
+    Search,
+    Filter,
+    ArrowUpDown,
+    ExternalLink
 } from "lucide-react"
 import { Icons } from "@/components/icons"
 import { cn } from "@/lib/utils"
@@ -262,6 +267,7 @@ export default function PullRequestsPage() {
                                             {(() => {
                                                 console.log(`PR #${pr.number} Analysis State:`, { id: pr.latest_analysis_id, status: pr.latest_analysis_status })
 
+                                                // Case 1: Analysis Failed -> Show Retry
                                                 if (pr.latest_analysis_id && pr.latest_analysis_status === 'failed') {
                                                     return (
                                                         <Button
@@ -274,27 +280,45 @@ export default function PullRequestsPage() {
                                                     )
                                                 }
 
+                                                // Case 2: Analysis Exists -> Show View + Re-Analyze Option
                                                 if (pr.latest_analysis_id && pr.latest_analysis_status !== 'failed') {
+                                                    if (pr.latest_analysis_status === 'processing' || pr.latest_analysis_status === 'pending') {
+                                                        return (
+                                                            <Button disabled className="w-full sm:w-auto h-11 px-8 gap-2.5 rounded-xl font-medium shadow-xl bg-emerald-500/50 text-white cursor-wait">
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                Processing...
+                                                            </Button>
+                                                        )
+                                                    }
+
                                                     return (
-                                                        <Button
-                                                            onClick={() => router.push(`/dashboard/analysis/${pr.latest_analysis_id}`)}
-                                                            className="w-full sm:w-auto h-11 px-8 gap-2.5 rounded-xl font-medium shadow-xl shadow-black/20 transition-all duration-300 bg-emerald-500 text-black hover:bg-emerald-400 hover:scale-105 hover:shadow-emerald-500/20"
-                                                        >
-                                                            {pr.latest_analysis_status === 'processing' || pr.latest_analysis_status === 'pending' ? (
-                                                                <>
+                                                        <div className="flex items-center gap-2">
+                                                            <Button
+                                                                onClick={() => router.push(`/dashboard/analysis/${pr.latest_analysis_id}`)}
+                                                                className="w-full sm:w-auto h-11 px-6 gap-2 rounded-xl font-medium shadow-xl shadow-emerald-500/10 bg-emerald-500 text-black hover:bg-emerald-400 hover:scale-105 transition-all"
+                                                            >
+                                                                <FileCode2 className="h-4 w-4" />
+                                                                View Results
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() => handleAnalyze(pr)}
+                                                                title="Re-run Analysis"
+                                                                disabled={analyzing === pr.id}
+                                                                className="h-11 w-11 rounded-xl border-zinc-800 bg-black/50 hover:bg-zinc-800 hover:text-white"
+                                                            >
+                                                                {analyzing === pr.id ? (
                                                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                                                    Processing...
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <FileCode2 className="h-4 w-4" />
-                                                                    View Results
-                                                                </>
-                                                            )}
-                                                        </Button>
+                                                                ) : (
+                                                                    <RefreshCw className="h-4 w-4" />
+                                                                )}
+                                                            </Button>
+                                                        </div>
                                                     )
                                                 }
 
+                                                // Case 3: No Analysis -> Show Analyze
                                                 return (
                                                     <Button
                                                         onClick={() => handleAnalyze(pr)}

@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { ArrowRight, CheckCircle2, ShieldCheck, Zap, ChevronRight } from "lucide-react"
+import { ArrowRight, CheckCircle2, ShieldCheck, Zap, ChevronRight, Bot, Code2, GitBranch, Github, Shield, Terminal, Activity, Lock, Users, BarChart3, Clock, Sparkles } from "lucide-react"
 import { Icons } from "@/components/icons"
+import { useRouter } from "next/navigation"
 
 // Force dynamic to debug Vercel 404
 export const dynamic = 'force-dynamic'
