@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             token = urlToken
             // Optionally save it immediately to avoid race with TokenHandler
             localStorage.setItem("token", urlToken)
+            document.cookie = `token=${urlToken}; path=/; max-age=604800; SameSite=Lax`
         }
 
         if (!token) {
@@ -85,6 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(data)
                 // Update cache
                 localStorage.setItem("user_cache", JSON.stringify(data))
+
+                // Intelligent Routing: Set cookie for middleware
+                document.cookie = `token=${token}; path=/; max-age=604800; SameSite=Lax`
+
                 setLoading(false)
             })
             .catch((err) => {

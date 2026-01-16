@@ -59,7 +59,12 @@ async def list_repos(
         # We should use the ACTUAL GitHub full_name if possible. 
         # Let's fix loop below to retrieve "full_name" from GitHub data.
         
-        active_repos_result = await db.execute(select(Repository).where(Repository.is_active == True))
+        active_repos_result = await db.execute(
+            select(Repository).where(
+                Repository.is_active == True,
+                Repository.owner_login == current_user.email
+            )
+        )
         active_repos = active_repos_result.scalars().all()
         # Create a set of active html_urls for easy lookup (assuming html_url is unique enough and consistent)
         active_urls = {r.html_url for r in active_repos}
@@ -237,8 +242,11 @@ async def list_active_pulls(
     from app.models.pull_request import PullRequest
     
     try:
-        # 1. Get Active Repos IDs
-        active_repos_stmt = select(Repository).where(Repository.is_active == True)
+        # 1. Get Active Repos IDs (Scoped to User)
+        active_repos_stmt = select(Repository).where(
+            Repository.is_active == True,
+            Repository.owner_login == current_user.email
+        )
         active_repos_res = await db.execute(active_repos_stmt)
         active_repos = active_repos_res.scalars().all()
         active_repo_ids = [r.id for r in active_repos]

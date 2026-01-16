@@ -2,13 +2,17 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-    // We cannot check localStorage in middleware (it runs on server/edge), 
-    // but we can check for a cookie if we had one. 
-    // Since we use localStorage, we rely on client-side protection (AuthProvider).
-    // However, we can basic route protection logic here if needed.
+    const token = request.cookies.get('token')?.value
+    const isAuthPage = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/'
 
-    // For this architecture (JWT in localStorage), middleware is limited.
-    // We will rely on AuthProvider for auth guards.
+    if (token && isAuthPage) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
+
     return NextResponse.next()
 }
 
