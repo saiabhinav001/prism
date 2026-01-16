@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # AI
     # AI
     # GEMINI_API_KEY removed
-    HF_LLM_URL: str = "https://huggingface.co/spaces/YOUR_USERNAME/prism-llm-service" # User to update this
+    HF_LLM_URL: str = "https://rockstar00-prism-llm-service.hf.space" # Updated with user's space
 
 
     def model_post_init(self, __context):
