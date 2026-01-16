@@ -3,7 +3,8 @@ import httpx
 from app.core.config import settings
 
 # Timeout for the HF model inference (CPU can be slow)
-TIMEOUT_SECONDS = 90
+# Timeout for the HF model inference (CPU can be slow)
+TIMEOUT_SECONDS = 300  # Increased to 5 minutes for very slow CPU starts
 
 async def analyze_pr_content(pr_id: int, diff_content: str):
     """
@@ -12,11 +13,9 @@ async def analyze_pr_content(pr_id: int, diff_content: str):
     print(f"Analyzing PR {pr_id} via Hugging Face Service...")
     
     if not settings.HF_LLM_URL or "YOUR_USERNAME" in settings.HF_LLM_URL:
-        print("Warning: HF_LLM_URL not set or invalid. Using Mock Response.")
-        return _get_mock_response()
+        return _get_mock_response("HF_LLM_URL not set or default value detected.")
 
     # Performance Safeguard: Trim whitespace and limit size
-    # Sending massive diffs to a CPU model will timeout or crash it.
     MAX_DIFF_SIZE = 15000 
     truncated = False
     if len(diff_content) > MAX_DIFF_SIZE:
@@ -32,21 +31,19 @@ async def analyze_pr_content(pr_id: int, diff_content: str):
             )
             
             if response.status_code != 200:
-                print(f"HF Service Error: {response.text}")
-                return _get_mock_response()
+                error_msg = f"HF Service Error: {response.status_code} - {response.text}"
+                print(error_msg)
+                return _get_mock_response(error_msg)
             
             return response.json()
             
     except Exception as e:
         print(f"Error calling HF Service: {e}")
-        # Log to file for debugging
-        with open("backend_ai_debug.log", "a") as log:
-            log.write(f"HF Error: {str(e)}\n")
-        return _get_mock_response()
+        return _get_mock_response(f"Connection Error: {str(e)}")
 
-def _get_mock_response():
+def _get_mock_response(error_detail: str = "Service unavailable"):
     return {
-        "summary": "Analysis service is currently unavailable or misconfigured (Mock Response).",
+        "summary": "Analysis failed.",
         "score": 0, 
         "security_score": 0,
         "performance_score": 0,
@@ -55,10 +52,10 @@ def _get_mock_response():
         "issues": [
             {
                 "type": "system",
-                "severity": "medium",
+                "severity": "high",
                 "location": "System",
-                "description": "The AI analysis service is unreachable.",
-                "suggestion": "Check HF_LLM_URL configuration and ensure the Space is running."
+                "description": f"Error: {error_detail}",
+                "suggestion": "Check HF_LLM_URL and Space Logs."
             }
         ]
     }
