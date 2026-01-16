@@ -33,6 +33,10 @@ class Settings(BaseSettings):
                 self.DATABASE_URL = self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
             elif self.DATABASE_URL.startswith("postgresql://"):
                  self.DATABASE_URL = self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+            
+            # Fix for asyncpg: It doesn't like '?sslmode=require' in the URL
+            if "?sslmode=" in self.DATABASE_URL:
+                self.DATABASE_URL = self.DATABASE_URL.split("?")[0]
         else:
             self.DATABASE_URL = f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
