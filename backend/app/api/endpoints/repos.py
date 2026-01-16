@@ -246,7 +246,23 @@ async def list_active_pulls(
         
         print(f"DEBUG: Found {len(prs)} PRs in DB")
         
-        # 3. Format Response (match previous JSON structure)
+        # 3. Fetch latest analysis for these PRs to determine button state
+        from app.models.analysis import Analysis
+        pr_ids = [pr.id for pr in prs]
+        latest_analyses_map = {}
+        
+        if pr_ids:
+            # Fetch all analyses for these PRs, ordered by recent first
+            # We filter in Python to get the latest per PR
+            a_stmt = select(Analysis).where(Analysis.pr_id.in_(pr_ids)).order_by(Analysis.created_at.desc())
+            a_res = await db.execute(a_stmt)
+            all_analyses = a_res.scalars().all()
+            
+            for a in all_analyses:
+                if a.pr_id not in latest_analyses_map:
+                    latest_analyses_map[a.pr_id] = a
+        
+        # 4. Format Response (match previous JSON structure)
         # We need to inject repo_name for the frontend
         repo_map = {r.id: r.name for r in active_repos}
         
@@ -262,6 +278,12 @@ async def list_active_pulls(
                 "avatar_url": pr.author_avatar_url 
             } 
             pr_dict["updated_at"] = pr.created_at.isoformat() 
+            
+            # Smart Button Data
+            latest_a = latest_analyses_map.get(pr.id)
+            pr_dict["latest_analysis_id"] = latest_a.id if latest_a else None
+            pr_dict["latest_analysis_status"] = latest_a.status if latest_a else None
+            
             response_data.append(pr_dict)
             
         return response_data

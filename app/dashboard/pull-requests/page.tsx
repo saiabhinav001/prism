@@ -43,6 +43,8 @@ interface PullRequest {
     updated_at: string
     repo_name: string
     internal_repo_id: number
+    latest_analysis_id?: number
+    latest_analysis_status?: string
 }
 
 export default function PullRequestsPage() {
@@ -257,28 +259,47 @@ export default function PullRequestsPage() {
                                                 </Link>
                                             </Button>
 
-                                            <Button
-                                                onClick={() => handleAnalyze(pr)}
-                                                disabled={analyzing === pr.id}
-                                                className={cn(
-                                                    "w-full sm:w-auto h-11 px-8 gap-2.5 rounded-xl font-medium shadow-xl shadow-black/20 transition-all duration-300",
-                                                    analyzing === pr.id
-                                                        ? "bg-zinc-800 text-zinc-400 cursor-not-allowed"
-                                                        : "bg-white text-black hover:bg-zinc-200 hover:scale-105 hover:shadow-white/10"
-                                                )}
-                                            >
-                                                {analyzing === pr.id ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                        Analyzing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <FileCode2 className="h-4 w-4" />
-                                                        Analyze PR
-                                                    </>
-                                                )}
-                                            </Button>
+                                            {pr.latest_analysis_id && pr.latest_analysis_status !== 'failed' ? (
+                                                <Button
+                                                    onClick={() => router.push(`/dashboard/analysis/${pr.latest_analysis_id}`)}
+                                                    className="w-full sm:w-auto h-11 px-8 gap-2.5 rounded-xl font-medium shadow-xl shadow-black/20 transition-all duration-300 bg-emerald-500 text-black hover:bg-emerald-400 hover:scale-105 hover:shadow-emerald-500/20"
+                                                >
+                                                    {pr.latest_analysis_status === 'processing' || pr.latest_analysis_status === 'pending' ? (
+                                                        <>
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                            Processing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <FileCode2 className="h-4 w-4" />
+                                                            View Results
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    onClick={() => handleAnalyze(pr)}
+                                                    disabled={analyzing === pr.id}
+                                                    className={cn(
+                                                        "w-full sm:w-auto h-11 px-8 gap-2.5 rounded-xl font-medium shadow-xl shadow-black/20 transition-all duration-300",
+                                                        analyzing === pr.id
+                                                            ? "bg-zinc-800 text-zinc-400 cursor-not-allowed"
+                                                            : "bg-white text-black hover:bg-zinc-200 hover:scale-105 hover:shadow-white/10"
+                                                    )}
+                                                >
+                                                    {analyzing === pr.id ? (
+                                                        <>
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                            Analyzing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <FileCode2 className="h-4 w-4" />
+                                                            Analyze PR
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 </CardContent>
