@@ -51,18 +51,22 @@ async def list_repos(
 
         repos_data = response.json()
         
-        # Get active repos from DB to map state
-        # We match by full_name or html_url. Ideally full_name aka "owner/repo"
-        # Since we use current_user.github_id in toggle, let's verify matches.
-        # In toggle: full_name=f"{current_user.github_id}/{repo_in.name}" 
-        # -> Wait, repo_in.name from GitHub response is usually just "prism". "full_name" field in GitHub response is "owner/prism".
-        # We should use the ACTUAL GitHub full_name if possible. 
-        # Let's fix loop below to retrieve "full_name" from GitHub data.
-        
+        # Get active repos from DB (Scoped to User)
+        # Fix Data Disappearance: Support both Email (new) and GitHub Login (legacy)
+        github_login = None
+        if repos_data and isinstance(repos_data, list) and len(repos_data) > 0:
+            # Extract login from first repo owner
+            github_login = repos_data[0].get("owner", {}).get("login")
+            
+        filters = [Repository.owner_login == current_user.email]
+        if github_login:
+            filters.append(Repository.owner_login == github_login)
+            
+        from sqlmodel import or_
         active_repos_result = await db.execute(
             select(Repository).where(
                 Repository.is_active == True,
-                Repository.owner_login == current_user.email
+                or_(*filters)
             )
         )
         active_repos = active_repos_result.scalars().all()
@@ -243,9 +247,43 @@ async def list_active_pulls(
     
     try:
         # 1. Get Active Repos IDs (Scoped to User)
+        # We need to match Email OR GitHub Login (if we can infer it, but we don't have it here easily without API call)
+        # However, for performance, we might need to rely on what we have.
+        # If we only have email, we miss the legacy ones.
+        # SAFE FIX: Fetch User's GitHub Login via a quick API call if token exists? 
+        # OR, since this is "list active pulls", we might need to just trust the user's token gives us access?
+        # No, we need to filter DB repos.
+        
+        # Optimization: Store github_login in User model? (Future)
+        # Current Fix: Try to match both if we can finding them.
+        # But we don't know the login here.
+        # Compromise: Filter by owner_login LIKE email OR owner_login LIKE part of email? No.
+        
+        # Better: We MUST fetch the login or store it.
+        # For now, let's look at `current_user.github_id`. It's numeric ID.
+        # Wait, if we updated `list_repos` to use `github_login`, we only get that AFTER calling GitHub.
+        # Here we only hit DB.
+        
+        # CRITICAL: We need `github_login` here.
+        # Let's fetch it from GitHub /user endpoint. It's fast (ms).
+        github_login = None
+        if current_user.github_token:
+             async with httpx.AsyncClient() as client:
+                 try:
+                     resp = await client.get("https://api.github.com/user", headers={"Authorization": f"Bearer {current_user.github_token}"})
+                     if resp.status_code == 200:
+                         github_login = resp.json().get("login")
+                 except:
+                     pass
+
+        from sqlmodel import or_
+        filters = [Repository.owner_login == current_user.email]
+        if github_login:
+            filters.append(Repository.owner_login == github_login)
+
         active_repos_stmt = select(Repository).where(
             Repository.is_active == True,
-            Repository.owner_login == current_user.email
+            or_(*filters)
         )
         active_repos_res = await db.execute(active_repos_stmt)
         active_repos = active_repos_res.scalars().all()

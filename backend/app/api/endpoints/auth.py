@@ -31,13 +31,28 @@ async def delete_users_me(
     from app.models.analysis import Analysis
     from sqlmodel import select, delete
 
-    # 1. Access user's email to find owned repositories
-    # Note: repos.py sets owner_login=current_user.email
+    # 1. Access user's email AND GitHub Login to find owned repositories
     user_email = current_user.email
+    github_login = None
     
+    # Fetch GitHub Login if token available (to find legacy repos)
+    if current_user.github_token:
+         try:
+             async with httpx.AsyncClient() as client:
+                 resp = await client.get("https://api.github.com/user", headers={"Authorization": f"Bearer {current_user.github_token}"})
+                 if resp.status_code == 200:
+                     github_login = resp.json().get("login")
+         except:
+             pass
+
     # 2. Find all repositories owned by this user
+    from sqlmodel import or_
+    filters = [Repository.owner_login == user_email]
+    if github_login:
+        filters.append(Repository.owner_login == github_login)
+
     # We need to manually cascade because SQLModel relationships/DB foreign keys might not be set to CASCADE
-    stmt = select(Repository).where(Repository.owner_login == user_email)
+    stmt = select(Repository).where(or_(*filters))
     result = await db.execute(stmt)
     user_repos = result.scalars().all()
     
