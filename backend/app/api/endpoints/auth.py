@@ -70,85 +70,93 @@ async def login_github():
 
 @router.get("/login/github/callback")
 async def login_github_callback(code: str, db: AsyncSession = Depends(get_session)):
-    async with httpx.AsyncClient() as client:
-        # Exchange code for token
-        response = await client.post(
-            "https://github.com/login/oauth/access_token",
-            headers={"Accept": "application/json"},
-            json={
-                "client_id": settings.GITHUB_CLIENT_ID,
-                "client_secret": settings.GITHUB_CLIENT_SECRET,
-                "code": code,
-                "redirect_uri": settings.GITHUB_REDIRECT_URI,
-            },
-        )
-        print(f"DEBUG: GitHub OAuth Response {response.status_code}: {response.text}")
-        if response.status_code != 200:
-             # Print actual error from GitHub
-            print(f"ERROR: GitHub Auth Failed: {response.text}")
-            raise HTTPException(status_code=400, detail=f"Failed to authenticate with GitHub: {response.text}")
-        
-        token_data = response.json()
-        access_token = token_data.get("access_token")
-        if not access_token:
-            raise HTTPException(status_code=400, detail="Failed to get access token")
+    try:
+        async with httpx.AsyncClient() as client:
+            # Exchange code for token
+            response = await client.post(
+                "https://github.com/login/oauth/access_token",
+                headers={"Accept": "application/json"},
+                json={
+                    "client_id": settings.GITHUB_CLIENT_ID,
+                    "client_secret": settings.GITHUB_CLIENT_SECRET,
+                    "code": code,
+                    "redirect_uri": settings.GITHUB_REDIRECT_URI,
+                },
+            )
+            print(f"DEBUG: GitHub OAuth Response {response.status_code}: {response.text}")
+            if response.status_code != 200:
+                # Print actual error from GitHub
+                print(f"ERROR: GitHub Auth Failed: {response.text}")
+                raise HTTPException(status_code=400, detail=f"Failed to authenticate with GitHub: {response.text}")
+            
+            token_data = response.json()
+            access_token = token_data.get("access_token")
+            if not access_token:
+                raise HTTPException(status_code=400, detail="Failed to get access token")
 
-        # Parallel Fetch: User Info and Emails
-        # import asyncio (Moved to top)
-        async def fetch_user():
-             return await client.get("https://api.github.com/user", headers={"Authorization": f"Bearer {access_token}"})
-        
-        async def fetch_emails():
-             return await client.get("https://api.github.com/user/emails", headers={"Authorization": f"Bearer {access_token}"})
+            # Parallel Fetch: User Info and Emails
+            async def fetch_user():
+                return await client.get("https://api.github.com/user", headers={"Authorization": f"Bearer {access_token}"})
+            
+            async def fetch_emails():
+                return await client.get("https://api.github.com/user/emails", headers={"Authorization": f"Bearer {access_token}"})
 
-        user_resp, email_resp = await asyncio.gather(fetch_user(), fetch_emails())
+            user_resp, email_resp = await asyncio.gather(fetch_user(), fetch_emails())
 
-        if user_resp.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to get user info")
-        
-        github_user = user_resp.json()
-        
-        # Get User Email (Prioritize Primary from /user/emails)
-        email = None
-        if email_resp.status_code == 200:
-            emails = email_resp.json()
-            if isinstance(emails, list):
-                primary_email_obj = next((e for e in emails if e.get("primary")), None)
-                if primary_email_obj:
-                    email = primary_email_obj["email"]
-        
-        # Fallback to public profile email if verified primary not accessible
-        if not email:
-            email = github_user.get("email")
+            if user_resp.status_code != 200:
+                raise HTTPException(status_code=400, detail="Failed to get user info")
+            
+            github_user = user_resp.json()
+            
+            # Get User Email (Prioritize Primary from /user/emails)
+            email = None
+            if email_resp.status_code == 200:
+                emails = email_resp.json()
+                if isinstance(emails, list):
+                    primary_email_obj = next((e for e in emails if e.get("primary")), None)
+                    if primary_email_obj:
+                        email = primary_email_obj["email"]
+            
+            # Fallback to public profile email if verified primary not accessible
+            if not email:
+                email = github_user.get("email")
 
-        if not email:
-             raise HTTPException(status_code=400, detail="No verified email found from GitHub")
+            if not email:
+                raise HTTPException(status_code=400, detail="No verified email found from GitHub")
 
-    # Check or Create User
-    user = await user_crud.get_by_email(db, email=email)
-    if not user:
-        user_in = UserCreate(
-            email=email,
-            github_id=str(github_user["id"]),
-            full_name=github_user.get("name"),
-            avatar_url=github_user.get("avatar_url"),
-            github_token=access_token # Save token
-        )
-        user = await user_crud.create(db, user_in)
-    else:
-        # Update token if user exists (to keep it fresh)
-        # We need a proper update method in CRUD, but for now specific update
-        user.github_token = access_token
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-    
-    # Create JWT
-    access_token_jwt = security.create_access_token(subject=user.id)
-    
-    # Redirect to Frontend
-    frontend_url = f"{settings.FRONTEND_URL}/dashboard"
-    return RedirectResponse(f"{frontend_url}?token={access_token_jwt}")
+        # Check or Create User
+        user = await user_crud.get_by_email(db, email=email)
+        if not user:
+            user_in = UserCreate(
+                email=email,
+                github_id=str(github_user["id"]),
+                full_name=github_user.get("name"),
+                avatar_url=github_user.get("avatar_url"),
+                github_token=access_token # Save token
+            )
+            user = await user_crud.create(db, user_in)
+        else:
+            # Update token if user exists (to keep it fresh)
+            user.github_token = access_token
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+        
+        # Create JWT
+        access_token_jwt = security.create_access_token(subject=user.id)
+        
+        # Redirect to Frontend
+        frontend_url = f"{settings.FRONTEND_URL}/dashboard"
+        return RedirectResponse(f"{frontend_url}?token={access_token_jwt}")
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"CRITICAL AUTH ERROR: {error_trace}")
+        # Return generic error but include detail for user debugging in this phase
+        raise HTTPException(status_code=500, detail=f"Internal Auth Error: {str(e)}")
 
 @router.post("/signup", response_model=Token)
 async def signup(user_in: UserSignup, db: AsyncSession = Depends(get_session)):
