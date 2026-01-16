@@ -138,25 +138,39 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-zinc-900/20 radial-gradient-center" />
           <div className="container px-4 md:px-6 relative z-10 text-center">
             <h2 className="text-sm font-semibold tracking-wider uppercase text-zinc-500 mb-12">Powered by Next-Generation Technology</h2>
-            <div className="flex justify-center flex-wrap gap-12 sm:gap-24 opacity-70 grayscale transition-all hover:grayscale-0 hover:opacity-100">
-              <div className="flex flex-col items-center gap-4 group cursor-default">
-                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 group-hover:border-blue-500/50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20" />
-                  {/* In a real app, use the Google Gemini Logo */}
+            <div className="flex justify-center flex-wrap gap-12 sm:gap-24">
+              <div className="flex flex-col items-center gap-4 group cursor-default transition-all duration-300 hover:scale-105">
+                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 group-hover:border-yellow-500/50 group-hover:bg-yellow-500/10 transition-all shadow-lg group-hover:shadow-yellow-500/20">
+                  <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                    <span className="text-yellow-500 font-bold text-xs">HF</span>
+                  </div>
                 </div>
-                <span className="font-semibold text-lg text-zinc-300">Gemini Pro</span>
+                <div className="text-center">
+                  <span className="font-semibold text-lg text-zinc-300 group-hover:text-yellow-500 transition-colors">Phi-3 Mini</span>
+                  <p className="text-xs text-zinc-500">Hugging Face Inference</p>
+                </div>
               </div>
-              <div className="flex flex-col items-center gap-4 group cursor-default">
-                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 group-hover:border-white/50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-white/20" />
+              <div className="flex flex-col items-center gap-4 group cursor-default transition-all duration-300 hover:scale-105">
+                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 group-hover:border-white/50 group-hover:bg-white/10 transition-all shadow-lg group-hover:shadow-white/20">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <span className="text-white font-bold text-xs">N</span>
+                  </div>
                 </div>
-                <span className="font-semibold text-lg text-zinc-300">Next.js 14</span>
+                <div className="text-center">
+                  <span className="font-semibold text-lg text-zinc-300 group-hover:text-white transition-colors">Next.js 16</span>
+                  <p className="text-xs text-zinc-500">Bleeding Edge React</p>
+                </div>
               </div>
-              <div className="flex flex-col items-center gap-4 group cursor-default">
-                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 group-hover:border-teal-500/50 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-teal-500/20" />
+              <div className="flex flex-col items-center gap-4 group cursor-default transition-all duration-300 hover:scale-105">
+                <div className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800 group-hover:border-teal-500/50 group-hover:bg-teal-500/10 transition-all shadow-lg group-hover:shadow-teal-500/20">
+                  <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-teal-500" />
+                  </div>
                 </div>
-                <span className="font-semibold text-lg text-zinc-300">FastAPI</span>
+                <div className="text-center">
+                  <span className="font-semibold text-lg text-zinc-300 group-hover:text-teal-500 transition-colors">FastAPI</span>
+                  <p className="text-xs text-zinc-500">Async Python Backend</p>
+                </div>
               </div>
             </div>
           </div>
@@ -165,8 +179,15 @@ export default function LandingPage() {
 
       <footer className="py-8 w-full border-t border-zinc-900 bg-black">
         <div className="container px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-zinc-500">
-            © 2026 PRISM Inc. Open Source Project.
+          <p className="text-sm text-zinc-500 flex items-center gap-2">
+            © {new Date().getFullYear()} PRISM Inc. Open Source Project.
+            <span className="inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 ml-2">
+              <span className="relative flex h-2 w-2 mr-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+              Systems Operational
+            </span>
           </p>
           <nav className="flex gap-6">
             <Link className="text-sm text-zinc-500 hover:text-white transition-colors" href="/terms">
