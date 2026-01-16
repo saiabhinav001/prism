@@ -22,25 +22,44 @@ async def get_dashboard_stats(
     """
     Get aggregated statistics for the dashboard.
     """
-    # 1. Total Analyses
-    # We can filter by user if we implement ownership on Analysis/Repo
-    # For now, let's just count all for this user's repos
-    
-    # 2. Active Repos
-    # We need to query the Repository table
-    # This assumes we are syncing repos to DB (which we will add next)
-    repo_result = await db.execute(select(func.count(Repository.id)).where(Repository.is_active == True))
+    # 1. Resolve User Identity (Email + GitHub Login)
+    github_login = None
+    if current_user.github_token:
+         try:
+             async with httpx.AsyncClient() as client:
+                 resp = await client.get("https://api.github.com/user", headers={"Authorization": f"Bearer {current_user.github_token}"})
+                 if resp.status_code == 200:
+                     github_login = resp.json().get("login")
+         except:
+             pass
+
+    from sqlmodel import or_
+    filters = [Repository.owner_login == current_user.email]
+    if github_login:
+        filters.append(Repository.owner_login == github_login)
+
+    repo_filter = or_(*filters)
+
+    # 2. Active Repos (Scoped to User)
+    repo_result = await db.execute(select(func.count(Repository.id)).where(Repository.is_active == True, repo_filter))
     active_repos_count = repo_result.scalar_one()
     
-    # 3. Total Analyses Count
-    analysis_result = await db.execute(select(func.count(Analysis.id)))
+    # 3. Total Analyses Count (Scoped to User via Repository)
+    # Join Analysis -> PullRequest -> Repository
+    analysis_result = await db.execute(
+        select(func.count(Analysis.id))
+        .join(PullRequest, Analysis.pr_id == PullRequest.id)
+        .join(Repository, PullRequest.repo_id == Repository.id)
+        .where(repo_filter)
+    )
     total_analyses = analysis_result.scalar_one()
-
-    # 4. Recent Analyses (for History/PR list)
-    # Join Analysis -> PullRequest to get titles
+    
+    # 4. Recent Analyses (Scoped to User)
     recent_query = (
         select(Analysis, PullRequest)
         .join(PullRequest, Analysis.pr_id == PullRequest.id)
+        .join(Repository, PullRequest.repo_id == Repository.id)
+        .where(repo_filter)
         .order_by(Analysis.created_at.desc())
         .limit(5)
     )
