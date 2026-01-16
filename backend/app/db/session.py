@@ -37,6 +37,15 @@ async def init_db():
                 await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS reliability_score INTEGER DEFAULT 0"))
                 await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS maintainability_score INTEGER DEFAULT 0"))
                 await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS merge_confidence_score INTEGER DEFAULT 0"))
+                
+                # CRITICAL FIX: Drop the old column that enforces NOT NULL
+                # This fixes the "NotNullViolationError: null value in column 'readability_score'"
+                try:
+                    await conn.execute(text("ALTER TABLE analysis DROP COLUMN IF EXISTS readability_score"))
+                except Exception as e:
+                    # Ignore if it fails (e.g., dependency issues), but print it
+                    print(f"Migration Warning: Could not drop readability_score: {e}")
+                    
             print("Database initialized successfully.")
             return
         except (OperationalError, OSError) as e:
