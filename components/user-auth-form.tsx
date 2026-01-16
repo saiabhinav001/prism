@@ -72,17 +72,40 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
     const handleGitHubLogin = async () => {
         setIsGitHubLoading(true)
+        console.log("Attempting GitHub Login via:", `${API_URL}/api/v1/auth/login/github`)
+
         try {
-            const response = await fetch(`${API_URL}/api/v1/auth/login/github`)
+            // Add a timeout to prevent infinite spinning
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout
+
+            const response = await fetch(`${API_URL}/api/v1/auth/login/github`, {
+                signal: controller.signal
+            })
+            clearTimeout(timeoutId)
+
+            if (!response.ok) {
+                throw new Error(`Backend Error ${response.status}: ${response.statusText}`)
+            }
+
             const data = await response.json()
             if (data.url) {
+                console.log("Redirecting to GitHub:", data.url)
                 window.location.href = data.url
             } else {
-                console.error("No URL returned from backend")
+                console.error("No URL returned from backend", data)
+                alert("Login Error: No redirect URL received from server.")
                 setIsGitHubLoading(false)
             }
         } catch (error) {
             console.error("GitHub login error:", error)
+
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                alert("Connection Timeout: The backend is waking up or unreachable. Please try again in 1 minute.")
+            } else {
+                alert(`Login Failed: ${error instanceof Error ? error.message : "Unknown Error"}\n\nCheck console for details.`)
+            }
+
             setIsGitHubLoading(false)
         }
     }
