@@ -24,6 +24,7 @@ async def analyze_pr_content(pr_id: int, diff_content: str):
 
     try:
         async with httpx.AsyncClient() as client:
+            print(f"DEBUG: Posting to {settings.HF_LLM_URL}/review")
             response = await client.post(
                 f"{settings.HF_LLM_URL}/review",
                 json={"diff": diff_content, "truncated": truncated},
@@ -35,11 +36,42 @@ async def analyze_pr_content(pr_id: int, diff_content: str):
                 print(error_msg)
                 return _get_mock_response(error_msg)
             
-            return response.json()
+            # Robust Parsing Logic
+            raw_data = response.json()
+            print(f"DEBUG: Raw LLM Response: {raw_data}") # CRITICAL LOG FOR DEBUGGING
+
+            # Case 1: Nested JSON (e.g. {"text": "..."})
+            if isinstance(raw_data, dict) and "text" in raw_data and isinstance(raw_data["text"], str):
+                 try:
+                     print("DEBUG: Detected nested JSON in 'text' field")
+                     cleaned_text = _clean_json_text(raw_data["text"])
+                     return json.loads(cleaned_text)
+                 except Exception as e:
+                     print(f"DEBUG: Failed to parse nested JSON: {e}")
+                     # Fallback: maybe the text IS the summary?
+                     return _get_mock_response(f"Parse Error on nested JSON: {e}")
+
+            # Case 2: It's already a dict, return it (but assume keys might be messy)
+            if isinstance(raw_data, dict):
+                 return raw_data
+                 
+            # Case 3: List? 
+            return raw_data
             
     except Exception as e:
         print(f"Error calling HF Service: {e}")
         return _get_mock_response(f"Connection Error: {str(e)}")
+
+def _clean_json_text(text: str) -> str:
+    """Removes markdown code blocks and whitespace."""
+    text = text.strip()
+    if text.startswith("```json"):
+        text = text[7:]
+    if text.startswith("```"):
+        text = text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
 
 def _get_mock_response(error_detail: str = "Service unavailable"):
     return {

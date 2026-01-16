@@ -65,6 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return
         }
 
+        // Optimistic: If we have cache, don't show loading
+        if (localStorage.getItem("user_cache")) {
+            setLoading(false)
+        }
+
         fetch(`${API_URL}/api/v1/auth/me`, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -80,14 +85,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(data)
                 // Update cache
                 localStorage.setItem("user_cache", JSON.stringify(data))
+                setLoading(false)
             })
             .catch((err) => {
-                console.error(err)
-                localStorage.removeItem("token")
-                localStorage.removeItem("user_cache")
-                router.push("/login")
-            })
-            .finally(() => {
+                console.error("Auth Validation Failed:", err)
+                // If network error but we have cache, keep user logged in for now (optimistic)
+                // Only logout if 401 explicitly? 
+                // For now, only logout if we DON'T have a cached user, or if error is definitely 401
+                if (!localStorage.getItem("user_cache")) {
+                    localStorage.removeItem("token")
+                    router.push("/login")
+                }
                 setLoading(false)
             })
     }, [router, searchParams])
