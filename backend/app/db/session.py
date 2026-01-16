@@ -4,7 +4,13 @@ from sqlmodel import SQLModel
 
 from app.core.config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=True, future=True)
+engine = create_async_engine(
+    settings.DATABASE_URL, 
+    echo=True, 
+    future=True,
+    pool_pre_ping=True,  # Fix for "connection is closed" errors
+    pool_recycle=300     # Recycle connections every 5 minutes
+)
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(
