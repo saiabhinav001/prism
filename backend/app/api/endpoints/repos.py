@@ -53,11 +53,16 @@ async def list_repos(
         
         # Get active repos from DB (Scoped to User)
         # Fix Data Disappearance: Support both Email (new) and GitHub Login (legacy)
+        # CRITICAL: Always fetch login from API, don't rely on repo list (which might be empty)
         github_login = None
-        if repos_data and isinstance(repos_data, list) and len(repos_data) > 0:
-            # Extract login from first repo owner
-            github_login = repos_data[0].get("owner", {}).get("login")
-            
+        try:
+            user_resp = await client.get("https://api.github.com/user", headers=headers)
+            if user_resp.status_code == 200:
+                github_login = user_resp.json().get("login")
+                print(f"DEBUG: Resolved GitHub Login: {github_login}")
+        except Exception as e:
+            print(f"DEBUG: Failed to resolve GitHub Login: {e}")
+
         filters = [Repository.owner_login == current_user.email]
         if github_login:
             filters.append(Repository.owner_login == github_login)
