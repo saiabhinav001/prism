@@ -55,15 +55,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (!token) {
+            // Check if we lost the token but have it in cookie? (Rare)
+            // Or if we are in a loop.
             setLoading(false)
-            // Only redirect if we are not already on login page? 
-            // Actually router.push might be annoying if we are just checking auth status.
-            // But strict logic: if no token, go to login.
-            // router.push("/login") 
-            // WARN: This might cause infinite redirect loop if purely relying on this.
-            // kept original logic:
             router.push("/login")
             return
+        }
+
+        // Ensure cookie is synced even if we came from localStorage
+        if (typeof document !== 'undefined' && !document.cookie.includes("token=")) {
+            document.cookie = `token=${token}; path=/; max-age=604800; SameSite=Lax`
         }
 
         // Optimistic: If we have cache, don't show loading

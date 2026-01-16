@@ -8,8 +8,15 @@ export function AuthRedirect() {
 
     useEffect(() => {
         // Intelligent Routing: If already logged in, go to dashboard
-        if (typeof window !== 'undefined' && localStorage.getItem("token")) {
-            router.push("/dashboard")
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem("token")
+            if (token) {
+                // Ensure cookie is set for middleware before redirecting
+                if (!document.cookie.includes("token=")) {
+                    document.cookie = `token=${token}; path=/; max-age=604800; SameSite=Lax`
+                }
+                router.push("/dashboard")
+            }
         }
     }, [router])
 
