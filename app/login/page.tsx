@@ -3,8 +3,7 @@ import Link from "next/link"
 import { UserAuthForm } from "@/components/user-auth-form"
 import { Icons } from "@/components/icons"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { AuthRedirect } from "@/components/auth-redirect"
 
 export const metadata: Metadata = {
     title: "Login - PRISM",
@@ -12,18 +11,10 @@ export const metadata: Metadata = {
 }
 
 export default function LoginPage() {
-    const router = useRouter()
-
-    useEffect(() => {
-        // Intelligent Routing: If already logged in, go to dashboard
-        if (localStorage.getItem("token")) {
-            router.push("/dashboard")
-        }
-    }, [router])
-
     return (
         // Suppress hydration warning to ignore browser extension injections (like screen recorders)
         <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0 bg-black" suppressHydrationWarning>
+            <AuthRedirect />
             <Link
                 href="/"
                 className="absolute right-4 top-4 md:right-8 md:top-8 z-20 text-sm font-medium text-zinc-400 hover:text-white transition-colors"
