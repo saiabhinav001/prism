@@ -6,6 +6,9 @@ import { motion } from "framer-motion"
 import { ArrowRight, CheckCircle2, ShieldCheck, Zap, ChevronRight } from "lucide-react"
 import { Icons } from "@/components/icons"
 
+// Force dynamic to debug Vercel 404
+export const dynamic = 'force-dynamic'
+
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-black text-white" suppressHydrationWarning>
