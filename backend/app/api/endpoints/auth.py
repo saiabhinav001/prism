@@ -147,7 +147,7 @@ async def login_github_callback(code: str, db: AsyncSession = Depends(get_sessio
     access_token_jwt = security.create_access_token(subject=user.id)
     
     # Redirect to Frontend
-    frontend_url = "http://localhost:3000/dashboard" # TODO: Config
+    frontend_url = f"{settings.FRONTEND_URL}/dashboard"
     return RedirectResponse(f"{frontend_url}?token={access_token_jwt}")
 
 @router.post("/signup", response_model=Token)

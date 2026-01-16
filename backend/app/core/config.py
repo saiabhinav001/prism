@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str = "Client_ID_Placeholder"
     GITHUB_CLIENT_SECRET: str = "Client_Secret_Placeholder"
     GITHUB_REDIRECT_URI: str = "http://localhost:3000/auth/callback"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # AI
     # AI
