@@ -2,6 +2,7 @@
 
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
+import { API_URL } from "@/lib/api-config"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,7 +23,7 @@ export default function SettingsPage() {
         setIsDeleting(true)
         try {
             const token = localStorage.getItem("token")
-            const res = await fetch("http://127.0.0.1:8000/api/v1/auth/me", {
+            const res = await fetch(`${API_URL}/api/v1/auth/me`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             })

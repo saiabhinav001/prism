@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/icons"
 
 import { useRouter } from "next/navigation"
+import { API_URL } from "@/lib/api-config"
 
 type UserAuthFormProps = React.HTMLAttributes<HTMLDivElement>
 
@@ -26,8 +27,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
 
         try {
             const endpoint = isSignUp
-                ? "http://127.0.0.1:8000/api/v1/auth/signup"
-                : "http://127.0.0.1:8000/api/v1/auth/login/access-token"
+                ? `${API_URL}/api/v1/auth/signup`
+                : `${API_URL}/api/v1/auth/login/access-token`
 
             const body = isSignUp
                 ? JSON.stringify({ email, password, full_name: fullName })
@@ -72,7 +73,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const handleGitHubLogin = async () => {
         setIsGitHubLoading(true)
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/auth/login/github")
+            const response = await fetch(`${API_URL}/api/v1/auth/login/github`)
             const data = await response.json()
             if (data.url) {
                 window.location.href = data.url

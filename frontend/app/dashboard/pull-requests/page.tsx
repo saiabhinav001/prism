@@ -26,6 +26,7 @@ import {
 import { Icons } from "@/components/icons"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
+import { API_URL } from "@/lib/api-config"
 import Link from "next/link"
 
 interface PullRequest {
@@ -94,7 +95,7 @@ export default function PullRequestsPage() {
             const token = localStorage.getItem("token")
             if (!token) return
 
-            const res = await fetch("http://127.0.0.1:8000/api/v1/repos/pulls", {
+            const res = await fetch(`${API_URL}/api/v1/repos/pulls`, {
                 headers: {
                     "Authorization": `Bearer ${token}`
                 }

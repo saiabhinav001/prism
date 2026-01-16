@@ -1,5 +1,7 @@
 "use client"
 
+import { useAuth } from "@/components/auth-provider"
+import { API_URL } from "@/lib/api-config"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,7 +41,7 @@ export default function RepositoriesPage() {
                 const token = localStorage.getItem("token")
                 if (!token) return
 
-                const res = await fetch("http://127.0.0.1:8000/api/v1/repos/list", {
+                const res = await fetch(`${API_URL}/api/v1/repos/list`, {
                     headers: {
                         "Authorization": `Bearer ${token}`
                     }
@@ -67,7 +69,7 @@ export default function RepositoriesPage() {
             const token = localStorage.getItem("token")
             if (!token) return
 
-            const res = await fetch("http://127.0.0.1:8000/api/v1/repos/toggle", {
+            const res = await fetch(`${API_URL}/api/v1/repos/toggle`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -97,7 +99,7 @@ export default function RepositoriesPage() {
 
     const handleConnectGitHub = async () => {
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/auth/login/github")
+            const response = await fetch(`${API_URL}/api/v1/auth/login/github`)
             const data = await response.json()
             if (data.url) {
                 window.location.href = data.url

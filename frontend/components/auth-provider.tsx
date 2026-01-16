@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { API_URL } from "@/lib/api-config"
 
 interface User {
     id: number
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return
         }
 
-        fetch("http://127.0.0.1:8000/api/v1/auth/me", {
+        fetch(`${API_URL}/api/v1/auth/me`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
