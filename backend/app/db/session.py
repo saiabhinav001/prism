@@ -45,6 +45,9 @@ async def init_db():
                 except Exception as e:
                     # Ignore if it fails (e.g., dependency issues), but print it
                     print(f"Migration Warning: Could not drop readability_score: {e}")
+                
+                # Update PullRequest table
+                await conn.execute(text("ALTER TABLE pullrequest ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT now()"))
                     
             print("Database initialized successfully.")
             return

@@ -32,9 +32,15 @@ async def analyze_pr_content(pr_id: int, diff_content: str):
             )
             
             if response.status_code != 200:
-                error_msg = f"HF Service Error: {response.status_code} - {response.text}"
-                print(error_msg)
-                return _get_mock_response(error_msg)
+                raw_text = response.text
+                # Sanitize HTML errors
+                if "<!DOCTYPE" in raw_text or "<html" in raw_text:
+                     error_summary = "Hugging Face Service Overloaded/Busy (500/503)"
+                else:
+                     error_summary = f"HF Service Error: {response.status_code}"
+                
+                print(f"HF Error: {response.status_code} - {raw_text[:200]}...") # Log brief
+                return _get_mock_response(error_summary)
             
             # Robust Parsing Logic
             raw_data = response.json()

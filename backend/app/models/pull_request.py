@@ -13,6 +13,7 @@ class PullRequest(SQLModel, table=True):
     html_url: str
     body: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     repository: "Repository" = Relationship(back_populates="pull_requests")
     analyses: List["Analysis"] = Relationship(back_populates="pull_request")

@@ -185,6 +185,8 @@ async def sync_repo_prs(repo: Repository, token: str, db: AsyncSession):
                 f.write(f"Found {len(prs_data)} PRs\n")
             
             # Upsert Logic
+            from dateutil import parser
+            
             for pr_data in prs_data:
                 # Check exist
                 stmt = select(PullRequest).where(
@@ -194,11 +196,15 @@ async def sync_repo_prs(repo: Repository, token: str, db: AsyncSession):
                 res = await db.execute(stmt)
                 existing_pr = res.scalars().first()
                 
+                # Parse GitHub timestamps
+                updated_at_dt = parser.parse(pr_data["updated_at"])
+                
                 if existing_pr:
                     existing_pr.title = pr_data["title"]
                     existing_pr.state = pr_data["state"]
                     existing_pr.body = pr_data.get("body")
                     existing_pr.author_avatar_url = pr_data["user"].get("avatar_url")
+                    existing_pr.updated_at = updated_at_dt # SYNC TIME
                     db.add(existing_pr)
                 else:
                     new_pr = PullRequest(
@@ -211,6 +217,9 @@ async def sync_repo_prs(repo: Repository, token: str, db: AsyncSession):
                         html_url=pr_data["html_url"],
                         body=pr_data.get("body")
                     )
+                    new_pr.updated_at = updated_at_dt # SYNC TIME
+                    # created_at defaults to now(), which is fine for "when we discovered it"
+                    # But if needed, we could fetch created_at from GitHub too.
                     db.add(new_pr)
             
             await db.commit()
@@ -239,8 +248,8 @@ async def list_active_pulls(
         if not active_repo_ids:
             return []
             
-        # 2. Get PRs from DB
-        stmt = select(PullRequest).where(PullRequest.repo_id.in_(active_repo_ids))
+        # 2. Get PRs from DB - Order by UPDATED_AT desc for liveliness
+        stmt = select(PullRequest).where(PullRequest.repo_id.in_(active_repo_ids)).order_by(PullRequest.updated_at.desc())
         result = await db.execute(stmt)
         prs = result.scalars().all()
         
@@ -277,7 +286,8 @@ async def list_active_pulls(
                 "login": pr.author_login,
                 "avatar_url": pr.author_avatar_url 
             } 
-            pr_dict["updated_at"] = pr.created_at.isoformat() 
+            # Use real updated_at from GitHub
+            pr_dict["updated_at"] = pr.updated_at.isoformat() if pr.updated_at else pr.created_at.isoformat()
             
             # Smart Button Data
             latest_a = latest_analyses_map.get(pr.id)
