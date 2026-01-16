@@ -1,3 +1,13 @@
+---
+title: Prism Llm Service
+emoji: 👁️
+colorFrom: purple
+colorTo: pink
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Hugging Face Space Deployment Instructions
 
 ## 1. Create Space
@@ -36,3 +46,4 @@ git push -u origin main
 - **Startup Time**: The first run will take a few minutes to download the model (approx 2GB).
 - **Latency**: Expect 20-60s per request on CPU.
 - **Timeouts**: The backend is configured to wait 90 seconds.
+ 
