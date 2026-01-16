@@ -162,8 +162,14 @@ async def perform_ai_analysis(analysis_id: int, pr_id: int, github_token: str):
             # Update Record
             analysis.status = "completed"
             analysis.raw_llm_output = result
-            analysis.security_score = result.get("score", 0) 
-            analysis.merge_confidence_score = result.get("score", 0)
+            
+            # Map specific scores (default to 0 if missing)
+            analysis.security_score = result.get("security_score", 0)
+            analysis.performance_score = result.get("performance_score", 0)
+            analysis.reliability_score = result.get("reliability_score", 0)
+            analysis.maintainability_score = result.get("maintainability_score", 0)
+            analysis.merge_confidence_score = result.get("merge_confidence", 0)
+            
             analysis.diff_snapshot = diff_content # Save the diff snapshot
             
             db.add(analysis)
@@ -271,7 +277,11 @@ async def get_analysis_result(
     response_data = {
         "id": analysis.id,
         "status": analysis.status,
-        "score": analysis.security_score, # Using security score as main score for now
+        "score": analysis.security_score, # For backward compatibility
+        "security_score": analysis.security_score,
+        "performance_score": analysis.performance_score,
+        "reliability_score": analysis.reliability_score,
+        "maintainability_score": analysis.maintainability_score,
         "created_at": analysis.created_at,
         "pr_title": pr.title if pr else "Unknown",
         "diff_view": analysis.diff_snapshot or "No diff content available."
