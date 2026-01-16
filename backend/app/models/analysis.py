@@ -9,7 +9,7 @@ class Analysis(SQLModel, table=True):
     
     security_score: int = Field(default=0)
     performance_score: int = Field(default=0)
-    readability_score: int = Field(default=0)
+    reliability_score: int = Field(default=0)
     maintainability_score: int = Field(default=0)
     merge_confidence_score: int = Field(default=0)
     

@@ -34,7 +34,7 @@ async def init_db():
                 # Auto-Migration for new score columns (Safe to run multiple times)
                 await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS security_score INTEGER DEFAULT 0"))
                 await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS performance_score INTEGER DEFAULT 0"))
-                await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS readability_score INTEGER DEFAULT 0"))
+                await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS reliability_score INTEGER DEFAULT 0"))
                 await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS maintainability_score INTEGER DEFAULT 0"))
                 await conn.execute(text("ALTER TABLE analysis ADD COLUMN IF NOT EXISTS merge_confidence_score INTEGER DEFAULT 0"))
             print("Database initialized successfully.")
